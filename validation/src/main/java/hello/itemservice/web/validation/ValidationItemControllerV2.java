@@ -11,6 +11,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
+import org.springframework.validation.ValidationUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -18,7 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@Slf4j
+@Slf4jㅂ
 @Controller
 @RequestMapping("/validation/v2/items")
 @RequiredArgsConstructor
@@ -169,9 +170,11 @@ public class ValidationItemControllerV2 {
         log.info("target={}", bindingResult.getTarget());
 
         // 검증 로직
+
+//        ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "item", "required");
+        //  ㄴ 아래 두 줄을 위에 한 줄로 가능!
         if (!StringUtils.hasText(item.getItemName())) { // 상품명칸에 글자가 없다면
             bindingResult.rejectValue("itemName", "required");
-//            new String[]{"required.item.itemName", "required"};
         }
         if (item.getPrice() == null || item.getPrice() < 1000 || item.getPrice() > 1000000) {
             bindingResult.rejectValue("price", "range", new Object[]{1000, 1000000}, null);
