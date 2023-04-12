@@ -26,6 +26,9 @@ import java.util.Map;
 public class ValidationItemControllerV2 {
 
     private final ItemRepository itemRepository;
+    private final ItemValidator itemValidator;
+    // 스프링 빈 주입! 생성자 하나라 @Autowired 생략 (생성자는 하나인테 파라미터가 두 개인 상황임)
+
 
     @GetMapping
     public String items(Model model) {
@@ -122,7 +125,6 @@ public class ValidationItemControllerV2 {
         return "redirect:/validation/v2/items/{itemId}";
     }
 
-
     //    @PostMapping("/add")
     public String addItemV3(@ModelAttribute Item item, BindingResult bindingResult, RedirectAttributes redirectAttributes, Model model) {
 
@@ -163,7 +165,7 @@ public class ValidationItemControllerV2 {
         return "redirect:/validation/v2/items/{itemId}";
     }
 
-    @PostMapping("/add")
+    //    @PostMapping("/add")
     public String addItemV4(@ModelAttribute Item item, BindingResult bindingResult, RedirectAttributes redirectAttributes, Model model) {
 
         log.info("objectName={}", bindingResult.getObjectName());
@@ -171,11 +173,11 @@ public class ValidationItemControllerV2 {
 
         // 검증 로직
 
-//        ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "item", "required");
+        ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "item", "required");
         //  ㄴ 아래 두 줄을 위에 한 줄로 가능!
-        if (!StringUtils.hasText(item.getItemName())) { // 상품명칸에 글자가 없다면
-            bindingResult.rejectValue("itemName", "required");
-        }
+//        if (!StringUtils.hasText(item.getItemName())) { // 상품명칸에 글자가 없다면
+//            bindingResult.rejectValue("itemName", "required");
+//        }
         if (item.getPrice() == null || item.getPrice() < 1000 || item.getPrice() > 1000000) {
             bindingResult.rejectValue("price", "range", new Object[]{1000, 1000000}, null);
         }
@@ -190,6 +192,24 @@ public class ValidationItemControllerV2 {
                 bindingResult.reject("totalPriceMin", new Object[]{10000, resultPrice}, null);
             }
         }
+
+        // 검증에 실패하면 다시 입력 폼으로
+        if (bindingResult.hasErrors()) {
+            log.info("errors={}", bindingResult); // bindingResult는 자동으로 view에 넘어가기 때문에 model에 담지 않아도 됨 !
+            return "validation/v2/addForm";
+        }
+
+        // 성공 로직
+        Item savedItem = itemRepository.save(item);
+        redirectAttributes.addAttribute("itemId", savedItem.getId());
+        redirectAttributes.addAttribute("status", true);
+        return "redirect:/validation/v2/items/{itemId}";
+    }
+
+    @PostMapping("/add")
+    public String addItemV5(@ModelAttribute Item item, BindingResult bindingResult, RedirectAttributes redirectAttributes, Model model) {
+
+        itemValidator.validate(item, bindingResult);
 
         // 검증에 실패하면 다시 입력 폼으로
         if (bindingResult.hasErrors()) {
